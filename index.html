@@ -1,0 +1,1864 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Morse Pro</title>
+    <!-- Lucide Icons (Local) -->
+    <script src="/js/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="/src/css/variables.css" />
+    <link rel="stylesheet" href="/src/css/layout.css" />
+    <link rel="stylesheet" href="/src/css/components.css" />
+    <link rel="stylesheet" href="/src/css/mobile.css" />
+
+    <!-- JS -->
+    <script src="/js/constants.js" defer></script>
+    <script src="/js/state.js" defer></script>
+    <script src="/js/storage.js" defer></script>
+    <script src="/js/audio.js" defer></script>
+    <script src="/js/utils/getCurrentHeatmap.js" defer></script>
+    <script src="/js/utils/calculateStringWeight.js" defer></script>
+    <script src="/js/utils/getAdaptiveSubset.js" defer></script>
+    <script src="/js/utils/generateAdaptiveRandomString.js" defer></script>
+    <script src="/js/utils/generateCallsign.js" defer></script>
+    <script src="/js/utils/generateAdaptiveKochString.js" defer></script>
+    <script src="/js/utils/getSelectedPool.js" defer></script>
+    <script src="/js/utils/getStreakStatus.js" defer></script>
+    <script src="/js/ui_toast.js" defer></script>
+    <script src="/js/ui_badges.js" defer></script>
+    <script src="/js/ui_nav.js" defer></script>
+    <script src="/js/ui_render.js" defer></script>
+    <script src="/js/ui_analytics.js" defer></script>
+    <script src="/js/ui_settings_modal.js" defer></script>
+    <script src="/js/ui_setup_modal.js" defer></script>
+    <script src="/js/ui_keyboard.js" defer></script>
+    <script src="/js/ui_init.js" defer></script>
+    <script src="/js/game.js" defer></script>
+    <script src="/js/qso_data.js" defer></script>
+    <script src="/js/qso_utils.js" defer></script>
+    <script src="/js/qso_audio.js" defer></script>
+    <script src="/js/qso_logic.js" defer></script>
+    <script src="/js/input/processInput.js" defer></script>
+    <script src="/js/input/handleMinigameInput.js" defer></script>
+    <script src="/js/input/handleKeyboardRx.js" defer></script>
+    <script src="/js/input/startIambic.js" defer></script>
+    <script src="/js/input/handleStraightKey.js" defer></script>
+    <script src="/js/input/handleSymbolCompletion.js" defer></script>
+    <script src="/js/input/handlePaddle.js" defer></script>
+    <script src="/js/input/setupInputs.js" defer></script>
+    <script src="/js/input/startGamepadLoop.js" defer></script>
+    <script src="/js/input/keyboardListeners.js" defer></script>
+    <script src="/js/main.js" defer></script>
+    <script type="module">
+      import { registerSW } from "virtual:pwa-register";
+      const updateSW = registerSW({
+        onNeedRefresh() {
+          // optionally notify user
+        },
+        onOfflineReady() {
+          console.log("App is ready to work offline.");
+        },
+      });
+    </script>
+  </head>
+  <body>
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+
+    <!-- Badge Info Detail Overlay -->
+    <div id="badge-info-overlay" class="overlay-container">
+      <div class="glass-card badge-info-card">
+        <div id="badge-info-icon" class="badge-icon badge-info-icon-wrapper">
+          <i data-lucide="award"></i>
+        </div>
+        <h3 id="badge-info-title" class="badge-info-title">Badge Title</h3>
+        <p id="badge-info-desc" class="badge-info-desc">
+          Description goes here.
+        </p>
+        <div id="badge-info-status" class="badge-info-status">
+          <!-- dynamic content from JS goes here -->
+        </div>
+        <button
+          class="btn btn-block"
+          onclick="
+            document
+              .getElementById('badge-info-overlay')
+              .classList.remove('open')
+          "
+        >
+          Close
+        </button>
+      </div>
+    </div>
+
+    <!-- Koch Warning Modal -->
+    <div
+      id="koch-warning-modal"
+      class="overlay-container"
+      style="z-index: 1000"
+    >
+      <div
+        class="glass-card"
+        style="max-width: 400px; padding: 32px 24px; position: relative"
+      >
+        <button
+          class="drawer-close"
+          onclick="
+            document
+              .getElementById('koch-warning-modal')
+              .classList.remove('open')
+          "
+          style="
+            position: absolute !important;
+            top: 16px !important;
+            right: 16px !important;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+          "
+        >
+          <i data-lucide="x" style="width: 20px; height: 20px"></i>
+        </button>
+        <div
+          style="
+            display: flex;
+            justify-content: center;
+            margin-bottom: 16px;
+            color: var(--accent-warning);
+          "
+        >
+          <i data-lucide="alert-triangle" style="width: 48px; height: 48px"></i>
+        </div>
+        <h3
+          style="
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-main);
+          "
+        >
+          Jumping Ahead?
+        </h3>
+        <p
+          id="koch-warning-text"
+          style="
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+            line-height: 1.5;
+          "
+        ></p>
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <button
+            id="koch-warning-playmax"
+            class="pop-btn"
+            style="width: 100%; justify-content: center"
+          >
+            Play Level X
+          </button>
+          <button
+            id="koch-warning-continue"
+            class="btn"
+            style="width: 100%; justify-content: center"
+          >
+            Continue Anyway
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Use overlay-container class for visibility logic -->
+    <div id="start-overlay" class="overlay-container">
+      <div class="glass-card">
+        <div class="brand" style="justify-content: center; margin-bottom: 20px">
+          <div class="brand-dot"></div>
+          <span>Morse Pro</span>
+        </div>
+        <div class="hero-title">Learn and Practice</div>
+        <div class="hero-subtitle">High Fidelity Training</div>
+
+        <div class="info-box">
+          <div style="margin-bottom: 8px">
+            <strong>Desktop:</strong> [Space] or [Arrows] or [[, ]] or [Ctrl] or [š, đ]
+          </div>
+          <div><strong>Mobile:</strong> Touch the paddle areas below</div>
+        </div>
+
+        <button class="cta-btn" id="init-btn">Initialize System</button>
+      </div>
+    </div>
+
+    <!-- Game Setup Overlay (Cleaner) -->
+    <div id="setup-overlay" class="overlay-container">
+      <div class="setup-card">
+        <div class="drawer-header" style="display: none">
+          <div class="drawer-title">Tactical Training</div>
+          <button class="drawer-close" id="cancel-game-btn-mobile">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <!-- Desktop Header -->
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+          "
+          class="desktop-cancel"
+        >
+          <h2 class="card-title">Tactical Training</h2>
+          <button class="btn btn-icon-only" id="cancel-game-btn">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <!-- Step 1: Mode -->
+        <div id="setup-step-1" class="setup-step">
+          <h3
+            class="step-title"
+            style="display: flex; align-items: center; gap: 6px"
+          >
+            Select Mode
+            <i
+              data-lucide="help-circle"
+              class="help-icon"
+              onclick="window.openHelp('help-mode')"
+              style="width: 16px; height: 16px"
+            ></i>
+          </h3>
+          <!-- Signal Path Toggle -->
+          <div class="toggle-group mode-toggle-group">
+            <div class="toggle-opt mode-toggle-opt selected" id="mode-send">
+              <i data-lucide="radio"></i> TX
+            </div>
+            <div class="toggle-opt mode-toggle-opt" id="mode-recv">
+              <i data-lucide="headphones"></i> RX
+            </div>
+            <div class="toggle-opt mode-toggle-opt" id="mode-qso">
+              <i data-lucide="messages-square"></i> QSO
+            </div>
+          </div>
+          <button
+            class="pop-btn"
+            id="setup-next-1"
+            style="width: 100%; justify-content: center; margin-top: auto"
+          >
+            Next Step
+          </button>
+        </div>
+
+        <!-- Step 2: Activity -->
+        <div id="setup-step-2" class="setup-step" style="display: none">
+          <h3 class="step-title">Select Module</h3>
+          <!-- Activity Grid -->
+          <div
+            class="activity-grid"
+            id="activity-grid"
+            style="margin-bottom: 24px"
+          >
+            <div class="activity-card selected" id="opt-callsigns">
+              <i data-lucide="contact"></i>
+              <span>Callsigns</span>
+            </div>
+            <div class="activity-card" id="opt-qcodes">
+              <i data-lucide="book-text"></i>
+              <span>Q-Codes</span>
+            </div>
+            <div class="activity-card" id="opt-random">
+              <i data-lucide="dices"></i>
+              <span>Random</span>
+            </div>
+            <div class="activity-card" id="opt-learn">
+              <i data-lucide="book-open"></i>
+              <span>Learn</span>
+            </div>
+            <div class="activity-card" id="opt-koch" style="display: none">
+              <i data-lucide="graduation-cap"></i>
+              <span>Koch</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 12px; width: 100%; margin-top: auto">
+            <button
+              class="btn"
+              id="setup-back-2"
+              style="flex: 1; justify-content: center"
+            >
+              Back
+            </button>
+            <button
+              class="pop-btn"
+              id="setup-next-2"
+              style="flex: 1; justify-content: center"
+            >
+              Next Step
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 3: Configure -->
+        <div
+          id="setup-step-3"
+          class="setup-step"
+          style="display: none; flex-direction: column"
+        >
+          <h3 class="step-title">Configure</h3>
+          <!-- Contextual Settings Panel -->
+          <div class="settings-panel">
+            <div id="game-desc" class="settings-desc">
+              Send randomly generated official callsigns.
+            </div>
+
+            <div
+              id="qso-config"
+              class="setting-row col"
+              style="display: none; gap: 16px; padding: 20px 0"
+            >
+              <div
+                class="setting-row"
+                style="width: 100%; justify-content: space-between"
+              >
+                <span class="setting-label">Your Callsign</span>
+                <input
+                  type="text"
+                  id="qso-callsign"
+                  value="N0CALL"
+                  class="callsign-input"
+                />
+              </div>
+              <div
+                class="setting-row"
+                style="width: 100%; justify-content: space-between"
+              >
+                <span class="setting-label">
+                  QRM (Interference)
+                  <i
+                    data-lucide="help-circle"
+                    class="help-icon"
+                    onclick="window.openHelp('help-qrm-qsb')"
+                    style="width: 14px; height: 14px"
+                  ></i>
+                </span>
+                <div class="range-wrapper" style="width: 120px">
+                  <input
+                    type="range"
+                    id="qso-qrm"
+                    min="0"
+                    max="100"
+                    value="30"
+                  />
+                </div>
+              </div>
+              <div
+                class="setting-row"
+                style="width: 100%; justify-content: space-between"
+              >
+                <span class="setting-label">
+                  QSB (Fading)
+                  <i
+                    data-lucide="help-circle"
+                    class="help-icon"
+                    onclick="window.openHelp('help-qrm-qsb')"
+                    style="width: 14px; height: 14px"
+                  ></i>
+                </span>
+                <div class="range-wrapper" style="width: 120px">
+                  <input
+                    type="range"
+                    id="qso-qsb"
+                    min="0"
+                    max="100"
+                    value="30"
+                  />
+                </div>
+              </div>
+              <div
+                class="setting-row"
+                style="width: 100%; justify-content: space-between"
+              >
+                <span class="setting-label">Crowded Stations</span>
+                <div class="range-wrapper" style="width: 120px">
+                  <input
+                    type="range"
+                    id="qso-crowd"
+                    min="0"
+                    max="5"
+                    value="2"
+                  />
+                </div>
+              </div>
+              <div
+                class="setting-row"
+                style="width: 100%; justify-content: space-between"
+              >
+                <span class="setting-label">Crowd Volume</span>
+                <div class="range-wrapper" style="width: 120px">
+                  <input
+                    type="range"
+                    id="qso-crowd-vol"
+                    min="0"
+                    max="100"
+                    value="30"
+                  />
+                </div>
+              </div>
+              <div
+                class="setting-row"
+                style="width: 100%; justify-content: space-between"
+              >
+                <span class="setting-label">
+                  Hide QSO Text
+                  <i
+                    data-lucide="help-circle"
+                    class="help-icon"
+                    onclick="window.openHelp('help-hide-qso')"
+                    style="width: 14px; height: 14px"
+                  ></i>
+                </span>
+                <div
+                  class="toggle-group"
+                  id="qso-hide-text-toggles"
+                  style="width: 120px"
+                >
+                  <div class="toggle-opt selected" id="qso-hide-text-off">
+                    Off
+                  </div>
+                  <div class="toggle-opt" id="qso-hide-text-on">On</div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              id="koch-config"
+              class="setting-row col"
+              style="display: none; gap: 16px; padding: 20px 0"
+            >
+              <div style="width: 100%; text-align: center">
+                <div id="koch-chars-display" class="koch-chars-display">K</div>
+              </div>
+
+              <div class="range-wrapper" style="width: 100%; padding: 8px 0">
+                <input
+                  type="range"
+                  id="koch-slider"
+                  min="1"
+                  max="40"
+                  value="1"
+                  step="1"
+                />
+              </div>
+
+              <div
+                style="
+                  width: 100%;
+                  text-align: center;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  gap: 6px;
+                "
+              >
+                <span class="koch-level-label"
+                  >Koch Level
+                  <span id="koch-level-val" class="koch-level-val"
+                    >1</span
+                  ></span
+                >
+                <i
+                  data-lucide="help-circle"
+                  class="help-icon"
+                  onclick="window.openHelp('help-koch')"
+                  style="width: 14px; height: 14px"
+                ></i>
+              </div>
+            </div>
+
+            <div
+              id="char-type-selector"
+              class="setting-row col"
+              style="display: none"
+            >
+              <span class="setting-label">Character Pool</span>
+              <div
+                class="toggle-group"
+                id="char-pool-toggles"
+                style="width: 100%; margin-bottom: 8px"
+              >
+                <div
+                  class="toggle-opt selected multi-select"
+                  data-type="letters"
+                >
+                  ABC
+                </div>
+                <div class="toggle-opt multi-select" data-type="numbers">
+                  123
+                </div>
+                <div class="toggle-opt multi-select" data-type="specials">
+                  @?!
+                </div>
+              </div>
+              <div
+                style="
+                  width: 100%;
+                  display: flex;
+                  align-items: center;
+                  gap: 8px;
+                "
+              >
+                <button
+                  class="btn"
+                  id="custom-chars-btn"
+                  style="flex: 1; justify-content: center"
+                >
+                  <i data-lucide="settings-2"></i>
+                  <span>Select Custom Characters</span>
+                </button>
+                <span id="custom-chars-count" class="custom-chars-count"
+                  >0 selected</span
+                >
+              </div>
+            </div>
+
+            <div class="setting-row" id="length-setting">
+              <span class="setting-label">Session Length</span>
+              <div class="counter-widget">
+                <button id="words-minus">
+                  <i data-lucide="minus" style="width: 16px; height: 16px"></i>
+                </button>
+                <span id="words-count-display">10</span>
+                <button id="words-plus">
+                  <i data-lucide="plus" style="width: 16px; height: 16px"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="setting-row" id="hints-setting">
+              <span class="setting-label">Visual Hints</span>
+              <div class="toggle-group" id="hints-toggle-group">
+                <div class="toggle-opt selected" id="hints-off">Off</div>
+                <div class="toggle-opt" id="hints-on">On</div>
+              </div>
+            </div>
+
+            <div
+              class="setting-row"
+              id="farnsworth-setting"
+              style="display: none"
+            >
+              <span class="setting-label">
+                Farnsworth Timing
+                <i
+                  data-lucide="help-circle"
+                  class="help-icon"
+                  onclick="window.openHelp('help-farnsworth')"
+                  style="width: 14px; height: 14px"
+                ></i>
+              </span>
+              <div class="toggle-group" id="farnsworth-toggle-group">
+                <div class="toggle-opt selected" id="farnsworth-off">Off</div>
+                <div class="toggle-opt" id="farnsworth-on">On</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Distinct Primary CTA Color applied via inline styles -->
+          <div style="display: flex; gap: 12px; width: 100%; margin-top: 24px">
+            <button
+              class="btn"
+              id="setup-back-3"
+              style="flex: 1; justify-content: center"
+            >
+              Back
+            </button>
+            <button
+              id="start-game-btn"
+              class="pop-btn"
+              style="flex: 1; justify-content: center"
+            >
+              Start Session
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analytics Overlay -->
+    <div id="analytics-overlay" class="overlay-container">
+      <div class="stats-dashboard">
+        <div class="stats-header" style="margin-bottom: 8px">
+          <div class="brand">
+            <span>Performance</span>
+          </div>
+          <button
+            id="close-analytics-btn"
+            class="btn btn-icon-only"
+            style="background: var(--bg-element); color: var(--text-main)"
+          >
+            <i data-lucide="x"></i>
+            <span>Close</span>
+          </button>
+        </div>
+
+        <div class="toggle-group" style="width: 100%; margin-bottom: 8px">
+          <div class="toggle-opt selected" id="stat-mode-tx">TX Stats</div>
+          <div class="toggle-opt" id="stat-mode-rx">RX Stats</div>
+        </div>
+
+        <div class="chart-container" style="padding: 16px">
+          <h3 class="section-title">WPM Progression</h3>
+          <div
+            class="chart-wrapper"
+            style="width: 100%; height: 180px; position: relative"
+          >
+            <canvas
+              id="wpm-chart"
+              style="
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+              "
+            ></canvas>
+            <div
+              id="no-data-msg"
+              style="
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--text-muted);
+                font-size: 0.8rem;
+              "
+            >
+              Complete a session to see data
+            </div>
+          </div>
+        </div>
+
+        <!-- Heatmap (Moved Up) -->
+        <div class="heatmap-container" style="padding: 16px">
+          <div
+            style="
+              width: 100%;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 12px;
+            "
+          >
+            <h3 class="section-title" style="margin: 0" id="heatmap-title">
+              Error Heatmap
+            </h3>
+            <div style="font-size: 0.7rem; color: var(--text-muted)">
+              Redder = More Errors
+            </div>
+          </div>
+          <div
+            id="heatmap-grid"
+            style="
+              display: flex;
+              flex-direction: column;
+              gap: 6px;
+              width: 100%;
+              align-items: center;
+            "
+          >
+            <!-- JS Injected Rows -->
+          </div>
+        </div>
+
+        <!-- Compact 2x2 Top Level Metrics -->
+        <div
+          class="metric-row"
+          style="
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 8px;
+          "
+        >
+          <div class="metric-card" id="stat-koch-level-card">
+            <div class="metric-label">Koch Level</div>
+            <div
+              class="metric-val"
+              id="stat-koch-level"
+              style="font-size: 1.8rem; color: var(--accent)"
+            >
+              1
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Best WPM</div>
+            <div
+              class="metric-val"
+              id="stat-best-wpm"
+              style="font-size: 1.8rem"
+            >
+              0
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Accuracy</div>
+            <div
+              class="metric-val"
+              id="stat-accuracy"
+              style="color: var(--accent-success); font-size: 1.8rem"
+            >
+              100%
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Time</div>
+            <div
+              class="metric-val"
+              id="stat-total-time"
+              style="font-size: 1.8rem"
+            >
+              0h
+            </div>
+          </div>
+        </div>
+
+        <!-- Achievements (Moved Down & Collapsible) -->
+        <div
+          class="chart-container"
+          style="min-height: auto; padding: 16px; margin-bottom: 24px"
+        >
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 12px;
+            "
+          >
+            <h3 class="section-title" style="margin: 0">Achievements</h3>
+            <div
+              style="font-size: 0.8rem; font-weight: 700; color: var(--primary)"
+              id="badges-count-display"
+            >
+              0/27
+            </div>
+          </div>
+          <div
+            id="badges-grid"
+            class="badges-grid"
+            style="
+              grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+              gap: 12px;
+            "
+          >
+            <!-- JS Injected Badges -->
+          </div>
+          <div
+            id="badges-expand-container"
+            style="display: none; margin-top: 16px"
+          ></div>
+        </div>
+
+        <div style="text-align: center; padding-bottom: 32px">
+          <button
+            id="reset-stats-btn"
+            class="btn btn-danger"
+            style="width: 100%; justify-content: center; margin-bottom: 12px"
+          >
+            Reset All Statistics
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results Overlay -->
+    <div id="game-results-overlay" class="overlay-container">
+      <div class="glass-card">
+        <div class="hero-title">Complete</div>
+        <div class="hero-subtitle">Session Report</div>
+
+        <div
+          class="results-grid"
+          style="
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin: clamp(16px, 4vw, 32px) 0;
+          "
+        >
+          <div
+            style="
+              background: var(--bg-element);
+              padding: 12px 8px;
+              border-radius: var(--radius-sm);
+              text-align: center;
+              border: none;
+            "
+          >
+            <div
+              style="
+                font-size: 0.65rem;
+                text-transform: uppercase;
+                color: var(--text-muted);
+                font-weight: 700;
+              "
+            >
+              Speed
+            </div>
+            <div
+              id="result-wpm"
+              style="
+                font-size: 1.6rem;
+                font-weight: 800;
+                color: var(--primary);
+                display: flex;
+                align-items: baseline;
+                justify-content: center;
+              "
+            >
+              0
+            </div>
+          </div>
+          <div
+            style="
+              background: var(--bg-element);
+              padding: 12px 8px;
+              border-radius: var(--radius-sm);
+              text-align: center;
+              border: none;
+            "
+          >
+            <div
+              style="
+                font-size: 0.65rem;
+                text-transform: uppercase;
+                color: var(--text-muted);
+                font-weight: 700;
+              "
+            >
+              Errors
+            </div>
+            <div
+              id="result-mistakes"
+              style="font-size: 1.6rem; font-weight: 800; color: var(--danger)"
+            >
+              0
+            </div>
+          </div>
+          <div
+            style="
+              background: var(--bg-element);
+              padding: 12px 8px;
+              border-radius: var(--radius-sm);
+              text-align: center;
+              border: none;
+            "
+          >
+            <div
+              style="
+                font-size: 0.65rem;
+                text-transform: uppercase;
+                color: var(--text-muted);
+                font-weight: 700;
+              "
+            >
+              Accuracy
+            </div>
+            <div
+              id="result-accuracy"
+              style="
+                font-size: 1.3rem;
+                font-weight: 700;
+                color: var(--text-main);
+                margin-top: 4px;
+              "
+            >
+              100%
+            </div>
+          </div>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            margin-top: clamp(8px, 2vw, 16px);
+          "
+        >
+          <button class="btn" onclick="closeResults()" style="flex: 1">
+            Menu
+          </button>
+          <button
+            class="pop-btn"
+            id="replay-result-btn"
+            style="flex: 1; justify-content: center; margin-top: 0"
+          >
+            Train Again
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cheat Sheet -->
+    <div class="cheat-sheet" id="table-container">
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 24px;
+          align-items: center;
+        "
+      >
+        <h2 class="card-title">Reference Table</h2>
+        <button class="btn" id="close-table-btn">
+          <i data-lucide="x"></i>
+          <span>Close</span>
+        </button>
+      </div>
+      <div class="sheet-grid" id="morse-grid"></div>
+    </div>
+
+    <!-- Custom Characters Overlay -->
+    <div class="cheat-sheet" id="custom-chars-overlay">
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 24px;
+          align-items: center;
+        "
+      >
+        <h2 class="card-title">Custom Characters</h2>
+        <button class="btn" id="close-custom-chars-btn">
+          <i data-lucide="x"></i>
+          <span>Close</span>
+        </button>
+      </div>
+      <div
+        style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px"
+      >
+        Select specific characters to practice. This overrides the character
+        pool.
+      </div>
+      <div
+        class="sheet-grid"
+        id="custom-chars-grid"
+        style="
+          grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+          gap: 8px;
+        "
+      >
+        <!-- Populated dynamically -->
+      </div>
+      <div style="display: flex; gap: 12px; width: 100%; margin-top: 24px">
+        <button class="btn" id="clear-custom-chars-btn" style="flex: 1">
+          Clear All
+        </button>
+        <button
+          class="pop-btn inverted"
+          id="save-custom-chars-btn"
+          style="flex: 1; justify-content: center"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+
+    <!-- Help / Glossary Overlay -->
+    <div id="help-overlay" class="overlay-container">
+      <div class="setup-card">
+        <div class="drawer-header" style="display: none">
+          <div class="drawer-title">Glossary & Help</div>
+          <button class="drawer-close" id="close-help-btn-mobile">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+          "
+          class="desktop-cancel"
+        >
+          <h2 class="card-title">Glossary & Help</h2>
+          <button class="btn btn-icon-only" id="close-help-btn">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <div
+          class="help-content"
+          style="
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+          "
+        >
+          <div class="help-section" id="help-mode">
+            <h3
+              style="
+                font-size: 1.1rem;
+                margin-bottom: 8px;
+                color: var(--text-main);
+              "
+            >
+              Modes
+            </h3>
+            <p
+              style="
+                color: var(--text-muted);
+                font-size: 0.9rem;
+                line-height: 1.5;
+                margin-bottom: 8px;
+              "
+            >
+              <strong>TX (Transmit):</strong> Practice sending Morse code using
+              the paddle or keyboard.
+            </p>
+            <p
+              style="
+                color: var(--text-muted);
+                font-size: 0.9rem;
+                line-height: 1.5;
+                margin-bottom: 8px;
+              "
+            >
+              <strong>RX (Receive):</strong> Practice listening to Morse code
+              and typing what you hear.
+            </p>
+            <p
+              style="
+                color: var(--text-muted);
+                font-size: 0.9rem;
+                line-height: 1.5;
+              "
+            >
+              <strong>QSO (Conversation):</strong> Simulate real-world radio
+              contacts with simulated interference and fading.
+            </p>
+          </div>
+
+          <div class="help-section" id="help-wpm">
+            <h3
+              style="
+                font-size: 1.1rem;
+                margin-bottom: 8px;
+                color: var(--text-main);
+              "
+            >
+              WPM (Words Per Minute)
+            </h3>
+            <p
+              style="
+                color: var(--text-muted);
+                font-size: 0.9rem;
+                line-height: 1.5;
+              "
+            >
+              The speed at which Morse code is sent or received. Higher WPM
+              means faster characters and shorter spaces.
+            </p>
+          </div>
+
+          <div class="help-section" id="help-farnsworth">
+            <h3
+              style="
+                font-size: 1.1rem;
+                margin-bottom: 8px;
+                color: var(--text-main);
+              "
+            >
+              Farnsworth Timing
+            </h3>
+            <p
+              style="
+                color: var(--text-muted);
+                font-size: 0.9rem;
+                line-height: 1.5;
+              "
+            >
+              A method for learning Morse code where individual characters are
+              sent at a fast speed (e.g., 20 WPM), but the spaces between
+              characters and words are stretched out to lower the overall speed
+              (e.g., 10 WPM). This helps you learn the "sound" of the character
+              without having to think as fast.
+            </p>
+          </div>
+
+          <div class="help-section" id="help-koch">
+            <h3
+              style="
+                font-size: 1.1rem;
+                margin-bottom: 8px;
+                color: var(--text-main);
+              "
+            >
+              Koch Method
+            </h3>
+            <p
+              style="
+                color: var(--text-muted);
+                font-size: 0.9rem;
+                line-height: 1.5;
+              "
+            >
+              A learning method where you start with just two characters at full
+              speed. Once you achieve 90% accuracy, you add another character.
+              This prevents you from building a "lookup table" in your head and
+              trains your reflexes directly.
+            </p>
+          </div>
+
+          <div class="help-section" id="help-qrm-qsb">
+            <h3
+              style="
+                font-size: 1.1rem;
+                margin-bottom: 8px;
+                color: var(--text-main);
+              "
+            >
+              QRM & QSB
+            </h3>
+            <p
+              style="
+                color: var(--text-muted);
+                font-size: 0.9rem;
+                line-height: 1.5;
+                margin-bottom: 8px;
+              "
+            >
+              <strong>QRM (Interference):</strong> Man-made interference from
+              other stations or electronics. Adds static and noise to the
+              signal.
+            </p>
+            <p
+              style="
+                color: var(--text-muted);
+                font-size: 0.9rem;
+                line-height: 1.5;
+              "
+            >
+              <strong>QSB (Fading):</strong> Natural variations in signal
+              strength due to atmospheric conditions. The signal will fade in
+              and out.
+            </p>
+          </div>
+
+          <div class="help-section" id="help-hide-qso">
+            <h3
+              style="
+                font-size: 1.1rem;
+                margin-bottom: 8px;
+                color: var(--text-main);
+              "
+            >
+              Hide QSO Text
+            </h3>
+            <p
+              style="
+                color: var(--text-muted);
+                font-size: 0.9rem;
+                line-height: 1.5;
+              "
+            >
+              Hides the incoming and outgoing text during a QSO, forcing you to
+              rely entirely on your ears to copy the message.
+            </p>
+          </div>
+
+          <div class="help-section" id="help-keyer">
+            <h3
+              style="
+                font-size: 1.1rem;
+                margin-bottom: 8px;
+                color: var(--text-main);
+              "
+            >
+              Keyer Options
+            </h3>
+            <p
+              style="
+                color: var(--text-muted);
+                font-size: 0.9rem;
+                line-height: 1.5;
+                margin-bottom: 8px;
+              "
+            >
+              <strong>Straight Key:</strong> A simple up/down switch. You
+              manually control the length of every dot and dash.
+            </p>
+            <p
+              style="
+                color: var(--text-muted);
+                font-size: 0.9rem;
+                line-height: 1.5;
+                margin-bottom: 8px;
+              "
+            >
+              <strong>Iambic A:</strong> A dual-lever paddle. Holding one side
+              sends continuous dots, the other sends dashes. Squeezing both
+              sends alternating dots and dashes.
+            </p>
+            <p
+              style="
+                color: var(--text-muted);
+                font-size: 0.9rem;
+                line-height: 1.5;
+              "
+            >
+              <strong>Iambic B:</strong> Similar to A, but if you release the
+              squeeze, it will complete the opposite element before stopping.
+              Preferred by many fast operators.
+            </p>
+          </div>
+
+          <div class="help-section" id="help-timing">
+            <h3
+              style="
+                font-size: 1.1rem;
+                margin-bottom: 8px;
+                color: var(--text-main);
+              "
+            >
+              Advanced Timing
+            </h3>
+            <p
+              style="
+                color: var(--text-muted);
+                font-size: 0.9rem;
+                line-height: 1.5;
+                margin-bottom: 8px;
+              "
+            >
+              <strong>Strict Timing:</strong> Enforces perfect spacing between
+              elements. If disabled, the keyer is more forgiving.
+            </p>
+            <p
+              style="
+                color: var(--text-muted);
+                font-size: 0.9rem;
+                line-height: 1.5;
+                margin-bottom: 8px;
+              "
+            >
+              <strong>Weighting:</strong> The ratio of dash length to dot
+              length. Standard is 3.0 (a dash is 3 times longer than a dot).
+            </p>
+            <p
+              style="
+                color: var(--text-muted);
+                font-size: 0.9rem;
+                line-height: 1.5;
+              "
+            >
+              <strong>Word Space:</strong> The gap between words, measured in
+              dot lengths. Standard is 7.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Donation CTA Overlay -->
+    <div id="cta-overlay" class="overlay-container" style="display: none">
+      <div class="glass-card">
+        <i
+          data-lucide="heart"
+          style="
+            width: 48px;
+            height: 48px;
+            color: var(--danger);
+            fill: var(--danger);
+            stroke: none;
+            margin-bottom: 16px;
+          "
+        ></i>
+        <div class="hero-title">Enjoying Morse Pro?</div>
+        <div class="hero-subtitle">Support the Development</div>
+
+        <div
+          style="
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin: 24px 0;
+            text-align: center;
+          "
+        >
+          This project is free, open-source, and has no ads. If it has helped
+          you improve your Morse code, consider supporting its development!
+        </div>
+
+        <div style="display: flex; gap: 12px; width: 100%; margin-top: 16px">
+          <button class="btn" id="cta-later-btn" style="flex: 1">
+            Maybe Later
+          </button>
+          <a
+            class="pop-btn inverted"
+            id="cta-donate-btn"
+            style="flex: 1; justify-content: center; text-decoration: none; align-items: center; display: flex;"
+            href="https://ko-fi.com/vladyakimov"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Support
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="app-shell">
+      <header class="top-bar">
+        <div class="brand">
+          <div
+            id="visual-indicator"
+            class="brand-dot"
+            title="Visual Signal"
+          ></div>
+          <span class="brand-text">Morse Pro</span>
+        </div>
+        <div class="header-actions">
+          <button id="minigame-btn" class="pop-btn">
+            <i data-lucide="gamepad-2" style="width: 20px; height: 20px"></i>
+            <span>Training</span>
+          </button>
+
+          <button id="analytics-btn" class="btn">
+            <i data-lucide="bar-chart-2" style="width: 18px; height: 18px"></i>
+            <span style="margin-left: 8px">Stats</span>
+          </button>
+
+          <button class="btn" id="table-btn">
+            <i data-lucide="table-2" style="width: 18px; height: 18px"></i>
+            <span style="margin-left: 8px">Ref</span>
+          </button>
+
+          <button class="btn" id="help-btn" title="Help / Glossary">
+            <i data-lucide="help-circle" style="width: 18px; height: 18px"></i>
+            <span style="margin-left: 8px">Help</span>
+          </button>
+
+          <button class="btn" id="donate-btn" title="Donate">
+            <i
+              data-lucide="heart"
+              style="
+                width: 18px;
+                height: 18px;
+                color: var(--danger);
+                fill: var(--danger);
+                stroke: none;
+              "
+            ></i>
+            <span style="margin-left: 8px">Donate</span>
+          </button>
+
+          <button class="mobile-menu-btn" id="mobile-nav-toggle" title="Menu">
+            <i data-lucide="menu" style="width: 24px; height: 24px"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Monitor Area -->
+      <main class="monitor-stage">
+        <div id="output" class="output-layer"></div>
+
+        <!-- QSO Active Layer -->
+        <div
+          id="qso-active"
+          class="layer-ui"
+          style="display: none; flex-direction: column; height: 100%"
+        >
+          <div
+            style="
+              position: absolute;
+              top: max(24px, env(safe-area-inset-top));
+              right: 24px;
+              z-index: 10;
+            "
+          >
+            <button id="quit-qso-btn" class="btn btn-danger btn-pill">
+              <i
+                data-lucide="square"
+                style="
+                  width: 14px;
+                  height: 14px;
+                  margin-right: 4px;
+                  fill: currentColor;
+                "
+              ></i>
+              End
+            </button>
+          </div>
+          <div
+            id="qso-output"
+            class="output-layer"
+            style="
+              display: flex;
+              flex-direction: column;
+              flex: 1;
+              overflow-y: auto;
+              padding-bottom: 100px;
+              margin-top: 40px;
+            "
+          ></div>
+          <div
+            style="
+              position: absolute;
+              bottom: max(32px, env(safe-area-inset-bottom));
+              left: 24px;
+              right: 24px;
+              display: flex;
+              justify-content: center;
+              z-index: 10;
+            "
+          >
+            <div id="qso-wpm-control" class="range-wrapper floating-control">
+              <div class="range-label">
+                <span id="qso-wpm-label">QSO WPM</span
+                ><span id="qso-wpm-value">15</span>
+              </div>
+              <input
+                type="range"
+                id="qso-wpm-slider"
+                min="5"
+                max="60"
+                value="15"
+                style="width: 100%"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Game Active Layer -->
+        <div
+          id="game-active"
+          class="layer-ui"
+          style="
+            display: none;
+            flex-direction: column;
+            padding: max(24px, env(safe-area-inset-top)) 24px
+              max(32px, env(safe-area-inset-bottom)) 24px;
+          "
+        >
+          <!-- Top Progress Bar -->
+          <div
+            style="
+              width: 100%;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              z-index: 10;
+              position: relative;
+            "
+          >
+            <button
+              id="replay-btn"
+              class="btn btn-primary-outline btn-pill"
+              style="position: absolute; left: 0; display: none"
+            >
+              <i
+                data-lucide="rotate-ccw"
+                style="width: 14px; height: 14px; margin-right: 4px"
+              ></i>
+              Replay
+            </button>
+            <div
+              style="
+                font-size: 0.9rem;
+                font-weight: 600;
+                color: var(--text-muted);
+                background: var(--bg-panel);
+                border: none;
+                padding: 6px 16px;
+                border-radius: 99px;
+              "
+              id="game-progress-container"
+            >
+              <span id="game-progress" style="color: var(--text-main)"
+                >1/10</span
+              >
+            </div>
+            <button
+              id="quit-game-btn"
+              class="btn btn-danger btn-pill"
+              style="position: absolute; right: 0"
+            >
+              <i
+                data-lucide="square"
+                style="
+                  width: 14px;
+                  height: 14px;
+                  margin-right: 4px;
+                  fill: currentColor;
+                "
+              ></i>
+              End
+            </button>
+          </div>
+
+          <!-- Word Container -->
+          <div
+            style="
+              flex: 1;
+              width: 100%;
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
+              align-items: center;
+              min-height: 0;
+              overflow: hidden;
+              margin: 16px 0;
+            "
+            id="current-word-display"
+            class="game-word-display"
+          ></div>
+
+          <!-- Bottom Action Bar -->
+          <div
+            style="
+              width: 100%;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 16px;
+              z-index: 10;
+            "
+          >
+            <!-- Instruction -->
+            <div
+              id="rx-instruction"
+              style="
+                text-align: center;
+                color: var(--text-muted);
+                font-size: 0.85rem;
+                opacity: 0;
+                transition: opacity 0.3s;
+                font-weight: 500;
+              "
+            >
+              Tap any letter to replay it
+            </div>
+
+            <!-- Actions -->
+            <div
+              style="
+                display: flex;
+                justify-content: center;
+                gap: 12px;
+                width: 100%;
+                max-width: 400px;
+                align-items: center;
+              "
+            >
+              <div
+                id="quick-wpm-control"
+                class="range-wrapper floating-control"
+              >
+                <div class="range-label">
+                  <span id="quick-wpm-label">TX WPM</span
+                  ><span id="quick-wpm-value">15</span>
+                </div>
+                <input
+                  type="range"
+                  id="quick-wpm-slider"
+                  min="5"
+                  max="60"
+                  value="15"
+                  style="width: 100%"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="monitor-toolbar" style="display: flex; gap: 8px">
+          <button
+            id="backspace-btn"
+            class="monitor-action-btn"
+            title="Backspace"
+          >
+            <i data-lucide="undo" style="width: 24px; height: 24px"></i>
+          </button>
+          <button
+            id="clear-output-btn"
+            class="monitor-action-btn"
+            title="Clear All"
+          >
+            <i data-lucide="x-circle" style="width: 24px; height: 24px"></i>
+          </button>
+        </div>
+      </main>
+
+      <!-- Controls (Drawer on Mobile) -->
+      <div class="control-deck" id="control-drawer">
+        <!-- Restored Mobile Header -->
+        <div class="drawer-header">
+          <div class="drawer-title">Controls</div>
+          <button class="drawer-close" id="drawer-close-btn">
+            <i data-lucide="x" style="width: 24px; height: 24px"></i>
+          </button>
+        </div>
+
+        <div class="control-group" id="keyer-group">
+          <span class="group-label">
+            Keyer Options
+            <i
+              data-lucide="help-circle"
+              class="help-icon"
+              onclick="window.openHelp('help-keyer')"
+              style="width: 14px; height: 14px"
+            ></i>
+          </span>
+          <div class="range-wrapper">
+            <div class="range-label">
+              <span>
+                TX WPM
+                <i
+                  data-lucide="help-circle"
+                  class="help-icon"
+                  onclick="window.openHelp('help-wpm')"
+                  style="width: 14px; height: 14px; margin-left: 4px"
+                ></i>
+              </span>
+              <span id="wpm-value">15</span>
+            </div>
+            <input type="range" id="wpm-slider" min="5" max="60" value="15" />
+          </div>
+          <button class="mode-btn btn" data-mode="straight">Key</button>
+          <button class="mode-btn btn" data-mode="iambic-a">Iam A</button>
+          <button class="mode-btn btn" data-mode="iambic-b">Iam B</button>
+        </div>
+
+        <div class="control-group" id="rx-group">
+          <span class="group-label">Receiver Options</span>
+          <div class="range-wrapper">
+            <div class="range-label">
+              <span>
+                RX WPM
+                <i
+                  data-lucide="help-circle"
+                  class="help-icon"
+                  onclick="window.openHelp('help-wpm')"
+                  style="width: 14px; height: 14px; margin-left: 4px"
+                ></i>
+              </span>
+              <span id="rx-wpm-value">15</span>
+            </div>
+            <input
+              type="range"
+              id="rx-wpm-slider"
+              min="5"
+              max="60"
+              value="15"
+            />
+          </div>
+        </div>
+
+        <div class="control-group" id="timing-group">
+          <span class="group-label">
+            Adv Timing
+            <i
+              data-lucide="help-circle"
+              class="help-icon"
+              onclick="window.openHelp('help-timing')"
+              style="width: 14px; height: 14px"
+            ></i>
+          </span>
+          <button id="strict-btn" class="btn" title="Strict Timing">
+            Strict
+          </button>
+          <div class="range-wrapper">
+            <div class="range-label">
+              <span>Weighting</span><span id="weighting-value">3.0</span>
+            </div>
+            <input
+              type="range"
+              id="weighting-slider"
+              min="2.0"
+              max="5.0"
+              step="0.1"
+              value="3.0"
+            />
+          </div>
+          <div class="range-wrapper">
+            <div class="range-label">
+              <span>Word Space</span><span id="wordspace-value">7</span>
+            </div>
+            <input
+              type="range"
+              id="wordspace-slider"
+              min="3"
+              max="15"
+              step="1"
+              value="7"
+            />
+          </div>
+        </div>
+
+        <div class="control-group">
+          <span class="group-label">Audio Synth</span>
+          <div class="range-wrapper">
+            <div class="range-label">
+              <span>Vol</span><span id="vol-value">40</span>
+            </div>
+            <input type="range" id="vol-slider" min="0" max="100" value="40" />
+          </div>
+          <div class="range-wrapper">
+            <div class="range-label">
+              <span>Freq</span><span id="tone-value">700</span>
+            </div>
+            <input
+              type="range"
+              id="tone-slider"
+              min="400"
+              max="1200"
+              value="700"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Touch Area -->
+      <div class="paddle-container" id="buttons">
+        <div class="paddle left" id="left-paddle">
+          <span>•</span>
+          <small>DIT</small>
+        </div>
+        <div class="paddle right" id="right-paddle">
+          <span>-</span>
+          <small>DAH</small>
+        </div>
+      </div>
+
+      <div class="keyboard-container" id="virtual-keyboard">
+        <!-- Alpha Layer -->
+        <div class="kb-layer" id="kb-layer-alpha">
+          <div class="kb-row">
+            <button class="kb-key" data-key="Q">Q</button>
+            <button class="kb-key" data-key="W">W</button>
+            <button class="kb-key" data-key="E">E</button>
+            <button class="kb-key" data-key="R">R</button>
+            <button class="kb-key" data-key="T">T</button>
+            <button class="kb-key" data-key="Y">Y</button>
+            <button class="kb-key" data-key="U">U</button>
+            <button class="kb-key" data-key="I">I</button>
+            <button class="kb-key" data-key="O">O</button>
+            <button class="kb-key" data-key="P">P</button>
+          </div>
+          <div class="kb-row">
+            <button class="kb-key" data-key="A">A</button>
+            <button class="kb-key" data-key="S">S</button>
+            <button class="kb-key" data-key="D">D</button>
+            <button class="kb-key" data-key="F">F</button>
+            <button class="kb-key" data-key="G">G</button>
+            <button class="kb-key" data-key="H">H</button>
+            <button class="kb-key" data-key="J">J</button>
+            <button class="kb-key" data-key="K">K</button>
+            <button class="kb-key" data-key="L">L</button>
+          </div>
+          <div class="kb-row">
+            <button class="kb-key kb-special" id="kb-switch-num">?123</button>
+            <button class="kb-key" data-key="Z">Z</button>
+            <button class="kb-key" data-key="X">X</button>
+            <button class="kb-key" data-key="C">C</button>
+            <button class="kb-key" data-key="V">V</button>
+            <button class="kb-key" data-key="B">B</button>
+            <button class="kb-key" data-key="N">N</button>
+            <button class="kb-key" data-key="M">M</button>
+            <button class="kb-key kb-special" id="kb-backspace-alpha">
+              <i data-lucide="delete"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Num Layer -->
+        <div class="kb-layer" id="kb-layer-sym" style="display: none">
+          <div class="kb-row">
+            <button class="kb-key" data-key="1">1</button>
+            <button class="kb-key" data-key="2">2</button>
+            <button class="kb-key" data-key="3">3</button>
+            <button class="kb-key" data-key="4">4</button>
+            <button class="kb-key" data-key="5">5</button>
+            <button class="kb-key" data-key="6">6</button>
+            <button class="kb-key" data-key="7">7</button>
+            <button class="kb-key" data-key="8">8</button>
+            <button class="kb-key" data-key="9">9</button>
+            <button class="kb-key" data-key="0">0</button>
+          </div>
+          <div class="kb-row">
+            <button class="kb-key" data-key=".">.</button>
+            <button class="kb-key" data-key=",">,</button>
+            <button class="kb-key" data-key="?">?</button>
+            <button class="kb-key" data-key="!">!</button>
+            <button class="kb-key" data-key="/">/</button>
+            <button class="kb-key" data-key="@">@</button>
+            <button class="kb-key" data-key="-">-</button>
+            <button class="kb-key" data-key=":">:</button>
+            <button class="kb-key" data-key=";">;</button>
+          </div>
+          <div class="kb-row">
+            <button class="kb-key kb-special" id="kb-switch-alpha">ABC</button>
+            <button class="kb-key" data-key="(">(</button>
+            <button class="kb-key" data-key=")">)</button>
+            <button class="kb-key" data-key="=">=</button>
+            <button class="kb-key" data-key="'">'</button>
+            <button class="kb-key" data-key='"'>"</button>
+            <button class="kb-key kb-special" id="kb-backspace-sym">
+              <i data-lucide="delete"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="mobile-bottom-nav">
+      <button class="nav-item" id="mob-ref">
+        <i data-lucide="table-2" style="width: 20px; height: 20px"></i>
+        <span>Ref</span>
+      </button>
+      <button class="nav-item" id="mob-stats">
+        <i data-lucide="bar-chart-2" style="width: 20px; height: 20px"></i>
+        <span>Stats</span>
+      </button>
+      <button class="nav-item" id="mob-train">
+        <i data-lucide="gamepad-2" style="width: 20px; height: 20px"></i>
+        <span>Train</span>
+      </button>
+      <button class="nav-item" id="mob-controls">
+        <i
+          data-lucide="sliders-horizontal"
+          style="width: 20px; height: 20px"
+        ></i>
+        <span>Controls</span>
+      </button>
+      <button class="nav-item" id="mob-donate">
+        <i
+          data-lucide="heart"
+          style="
+            width: 20px;
+            height: 20px;
+            color: var(--danger);
+            fill: var(--danger);
+            stroke: none;
+          "
+        ></i>
+        <span>Donate</span>
+      </button>
+    </nav>
+  </body>
+</html>

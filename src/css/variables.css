@@ -1,0 +1,78 @@
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/800.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/700.css";
+
+:root {
+    /* Palette - Modern Flat Dark (Slate) */
+    --bg-app: #020617;       /* Slate 950 - Darker background for better contrast */
+    --bg-app-rgb: 2, 6, 23;
+    --bg-panel: #0F172A;     /* Slate 900 - Subtle Elevation */
+    --bg-panel-rgb: 15, 23, 42;
+    --bg-element: #1E293B;   /* Slate 800 - Elevated Elements */
+    --bg-active: #334155;    /* Slate 700 - Active/Hover States */
+    
+    --primary: #3B82F6;      /* Blue 500 */
+    --primary-dark: #2563EB; /* Blue 600 */
+    --primary-rgb: 59, 130, 246;
+    
+    --accent-warning: #F59E0B;       /* Vibrant Amber */
+    --accent-warning-rgb: 245, 158, 11;
+    --accent-success: #10B981; /* Modern Emerald */
+    --accent-info: #3B82F6;    /* Blue 500 */
+    --accent-info-rgb: 59, 130, 246;
+    --accent-purple: #8b5cf6;  /* Violet 500 */
+    
+    --danger: #ef4444;       /* Red 500 */
+    --danger-rgb: 239, 68, 68;
+    
+    --text-main: #F8FAFC;    /* Slate 50 - Crisp Off-White */
+    --text-muted: #CBD5E1;   /* Slate 300 - Brighter Muted Gray-Blue for better contrast */
+    
+    --border: #334155;       /* Slate 700 - More visible borders */
+    --border-hover: #475569; /* Slate 600 */
+    
+    --radius-lg: 24px;
+    --radius-md: 16px;
+    --radius-sm: 10px;
+    
+    --trans-fast: 0.15s ease;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+*::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+}
+
+html {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-app);
+    color: var(--text-main);
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+body.needs-extra-padding .app-shell {
+    padding-bottom: 110px !important; /* 80px base + 30px extra buffer */
+}
